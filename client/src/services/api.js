@@ -95,9 +95,21 @@ export const categoryService = {
     return response.data;
   },
 
+  // Get a single category by ID
+  getCategoryById: async (id) => {
+    const response = await api.get(`/categories/${id}`);
+    return response.data;
+  },
+
   // Create a new category
   createCategory: async (categoryData) => {
     const response = await api.post('/categories', categoryData);
+    return response.data;
+  },
+
+  // Update a category
+  updateCategory: async (id, categoryData) => {
+    const response = await api.put(`/categories/${id}`, categoryData);
     return response.data;
   },
 };
