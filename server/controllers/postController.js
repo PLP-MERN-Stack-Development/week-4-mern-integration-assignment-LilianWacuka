@@ -1,23 +1,24 @@
 const Posts = require('../models/Post');
-const { post } = require('../server');
 
-//Create a new post
-exports.addPosts = async (req, res) => {
+// Get all posts
+exports.getPosts = async (req, res) => {
     try {
-        const post = await Posts.create({
-            ...req.body,
-            user: req.body.author // Use author from request body
-        });
-        res.status(201).json({ success: true, data: post });
+        const posts = await Posts.find()
+            .populate('category', 'name')
+            .populate('user', 'username email')
+            .sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: posts });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-//GET a single post by ID
-exports.getPostsById = async (req, res) => {
-    const post = await Posts.find({ user: req.user,id});
+// Get a single post by ID
+exports.getPostById = async (req, res) => {
     try {
+        const post = await Posts.findById(req.params.id)
+            .populate('category', 'name')
+            .populate('user', 'username email');
         if (!post) {
             return res.status(404).json({ success: false, message: 'Post not found' });
         }
@@ -27,48 +28,45 @@ exports.getPostsById = async (req, res) => {
     }
 };
 
-// GET all posts
-exports.getPosts = async (req, res) => {
+// Create a new post
+exports.addPost = async (req, res) => {
     try {
-        const posts = await Posts.find()
-          .populate('category', 'name')
-          .populate('user', 'username email') 
-          .sort({ createdAt: -1 });
-        res.status(200).json({ success: true, data: posts });
+        const post = await Posts.create({
+            ...req.body,
+            user: req.body.user // Should be set from auth middleware in a real app
+        });
+        res.status(201).json({ success: true, data: post });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        res.status(400).json({ success: false, message: error.message });
     }
 };
 
-//update an existing post
-exports.updatePosts = async (req, res) =>{
-    
+// Update an existing post
+exports.updatePost = async (req, res) => {
     try {
-        const updatedPost = await Posts.findByIdAndUpdate(req.params.id, req.body, {new: true});
+        const updatedPost = await Posts.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
         if (!updatedPost) {
             return res.status(404).json({ success: false, message: 'Post not found' });
         }
+        res.status(200).json({ success: true, data: updatedPost });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-        
+        res.status(400).json({ success: false, message: error.message });
     }
-    
 };
-//delete a post
-exports.deletePosts = async (req, res) => {
+
+// Delete a post
+exports.deletePost = async (req, res) => {
     try {
         const deletedPost = await Posts.findByIdAndDelete(req.params.id);
         if (!deletedPost) {
             return res.status(404).json({ success: false, message: 'Post not found' });
         }
-        // Check if user owns the post or is admin
-        if (post.owner.toString() !== req.user.id && req.user.role !== "admin") {
-            return res.status(403).json({ message: "Not authorized to delete this task" });
-        }
-
-        await Task.findByIdAndDelete(req.params.id);
-        res.json({ message: "Task deleted successfully" });
+        res.json({ success: true, message: 'Post deleted successfully' });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ success: false, message: error.message });
     }
 };
